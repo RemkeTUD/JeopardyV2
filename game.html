@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="description" content="Webpage description goes here" />
+  <meta charset="utf-8">
+  <title>NerdQuiz</title>
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
+  <meta name="author" content="">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script
+			  src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
+			  integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30="
+        crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet"  href="/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"> 
+  
+  <script src='https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css' rel='stylesheet' />
+</head>
+
+<body>
+  
+<div class="container" style="align-items: center;">
+  <div class="table">
+      
+  </div>
+</div>
+
+
+<div id="showQuestion">
+  <div class="centeredDiv" style="display: inline-block;">
+    
+    <p style="font-size: calc(10px + 2vw); padding: 5pt; margin: 5pt;" id="Question"></p>
+  <img class = "centerImage questionImg" id="QuestionPicture"></img>
+  <p id="schatz">Schätzung: <input id="schatzIn"  type="number" oninput="sendGuess()"></input></p>
+  </div >
+  <div id='mapC' style='width: 100%; height: 60vh'>
+  </div>
+<hr style="width: 100%;"></hr>
+<div class="centeredDiv" style="display: inline-block;">
+  <p style="font-size: calc(10px + 2vw); padding: 5pt; margin: 5pt;" id="Answer"></p>
+  <img class = "centerImage questionImg" id="AnswerPicture"></img>
+</div>
+<audio  id="audioPlayQuestion">
+  <source id="audioQuestion" type="audio/mpeg"><source>
+</audio>
+</div>
+
+<div id="addName" class="InfoBox">
+  <p>Please Enter Your Name: </p>
+  
+  <div class="centeredDiv">
+    <input id="nameBox"></input>
+  </div>
+  <div class="centeredDiv">
+
+    <button style="margin-top: 30pt; width: 50%;" onclick="sendName()">Confirm</button>
+  </div>
+
+</div>
+<div class="menuContainer">
+  <div style="display:inline-block;" id="Points"><a>Test: 123213</a><a>Test: 123213</a></div><br>
+  <img style onclick="buzz()" id="buzzerBut" src="/button.png"></img>
+</div>
+
+<img id = "right" class="RevealResult" src="/right.png"></img>
+
+<img id = "wrong" class="RevealResult" src="/wrong.png"></img>
+
+<script>
+
+mapboxgl.accessToken = 'pk.eyJ1IjoicmVta2V0dWQiLCJhIjoiY2s1YXR5cDdtMWFkbjNlcXg1eHJiOW52MCJ9.V3UJWV-eH3FwK3PN4bYoPA';
+var map = new mapboxgl.Map({
+container: 'mapC',
+style: 'mapbox://styles/remketud/ckeo9wym541cp19ociv6yq6xd', // stylesheet location
+center: [-74.5, 40], // starting position [lng, lat]
+zoom: 1,
+maxZoom: 11
+});
+
+var animationPlayed = false;
+var firstLt = null;
+var MapEl, MapElGoal;
+
+map.on('click', function(e) {
+  
+  $("#longitude").val(e.lngLat.lng);
+  $("#latitude").val(e.lngLat.lat);
+
+sendLocation(e.lngLat);
+
+  if(firstLt == null) {
+    firstLt = e.lngLat;
+    MapEl = document.createElement('div');
+    MapEl.className = 'marker';
+  // make a marker for each feature and add to the map
+  new mapboxgl.Marker(MapEl)
+    .setLngLat(e.lngLat)
+    .addTo(map);
+  } else {
+
+    console.log('A click event has occurred at ' + (e.lngLat.distanceTo(firstLt) / 1000) + ' km');
+    firstLt = e.lngLat;
+
+  // make a marker for each feature and add to the map
+  new mapboxgl.Marker(MapEl)
+    .setLngLat(e.lngLat)
+    .addTo(map);
+  }
+  
+});
+
+document.body.addEventListener("keyup", function(event) {
+  if (event.keyCode === 32) {
+    buzz();
+  }
+}); 
+
+var splittedURL = window.location.href.split("/");
+const queryString = splittedURL[splittedURL.length-1];
+
+categoryNames = ["?", "?"];
+
+categories = [[["Test Question 1", "Test Answer"],["Test Question 2", "Test Answer"]],[["Test Question 3", "Test Answer"],["Test Question 4", "Test Answer"]]];
+
+pointCategories = [100,200];
+
+currentX = 0, currentY = 0;
+
+dargStartX = 0, dragStartY = 0;
+
+dragStartOffset = null;
+
+isCurrentDrag = false;
+
+currentInOffset = null;
+
+originalOffest = null;
+
+getAllData();
+
+points = {};
+
+//$("#showQuestion").hide();
+
+function replayAnim(el) {	
+	el.show();
+  var el     = el,  
+      newone = el.clone(true);
+            
+  el.before(newone);
+          
+  $("." + el.attr("RevealResult") + ":last").remove();
+  
+}
+$("#right").hide();
+$("#wrong").hide();
+
+var exampleSocket  = new WebSocket("ws://" + window.location.hostname + ":8080/echo");
+exampleSocket.onopen = function (event) {
+    exampleSocket.send(JSON.stringify({"MessageType": "AddConnection", code: queryString}));
+    exampleSocket.send(JSON.stringify({"MessageType": "AddName", name: "NewPlayer", code: queryString})); 
+  };
+  exampleSocket.onmessage = function(event) {
+    
+    json = JSON.parse(event.data);
+    if(json.MessageType=="OpenQuestion") {
+      if(categories[json.x][json.y][3]!=null) {
+        $("#QuestionPicture").attr("src",categories[json.x][json.y][3]);
+        $("#QuestionPicture").css({transform: "rotateY(-90deg)"});
+        $("#QuestionPicture").animateRotate(-90, 0, 0, 500);
+      }
+      else
+        $("#QuestionPicture").attr("src","");
+
+        if(categories[json.x][json.y][4]!=null) {
+        
+        document.getElementById("audioQuestion").src=categories[json.x][json.y][4];
+        
+        document.getElementById("audioPlayQuestion").load();
+        document.getElementById("audioPlayQuestion").play();
+      }
+      else
+        $("#showQuestion").find("#audioQuestion").attr("src","");
+
+      $("#AnswerPicture").attr("src","");
+      //$("#showQuestion").show();
+      $("#showQuestion").addClass("scaled");
+      $("#showQuestion").find("#Question").html(categories[json.x][json.y][0]);
+
+      $("#schatz").hide();
+      if(categories[json.x][json.y][7] == "schatzfrage")
+        $("#schatz").show();
+        
+      $("#mapC").hide();
+      if(categories[json.x][json.y][7] == "Location") {
+        $("#mapC").show();
+        $('#mapC').hide().show(0);
+        map.resize();
+      }
+        
+        $("#schatzIn").val("");
+        
+    }
+    if(json.MessageType=="CloseQuestion") {
+      rebuildTable();
+      //$("#showQuestion").hide();
+      $("#showQuestion").removeClass("scaled");
+      $("#showQuestion").find("#Question").html("");
+      $("#showQuestion").find("#Answer").html("");
+      
+      document.getElementById("audioPlayQuestion").pause();
+
+      document.getElementById("goalMarker").outerHTML = ""
+    }
+    if(json.MessageType=="RevealAnswer") {
+      
+      if(json.right == true) {
+        replayAnim($("#right"));
+      } else {
+        replayAnim($("#wrong"));
+      }
+
+      categories[json.x][json.y][2] = true;
+
+      if(categories[json.x][json.y][5]!=null) {
+        $("#AnswerPicture").attr("src",categories[json.x][json.y][5]);
+        $("#AnswerPicture").css({transform: "rotateY(-90deg)"});
+        $("#AnswerPicture").animateRotate(-90, 0, 0, 500);
+      }
+      else
+        $("#AnswerPicture").attr("src","");
+      $("#showQuestion").find("#Answer").html(categories[json.x][json.y][1]);
+      
+      console.log(categories[json.x][json.y][7]);
+
+      if(categories[json.x][json.y][7] == "Location") {
+
+        if(document.getElementById("goalMarker") == null) {
+          
+          MapElGoal = document.createElement('div');
+          MapElGoal.className = 'markerPerson';
+          
+          MapElGoal.id = 'goalMarker';
+        }
+        // make a marker for each feature and add to the map
+        new mapboxgl.Marker(MapElGoal)
+        .setLngLat(new mapboxgl.LngLat(categories[json.x][json.y][8].long,categories[json.x][json.y][8].lat))
+        .addTo(map);
+      }
+      
+      document.getElementById("audioPlayQuestion").pause();
+    }
+
+    if(json.MessageType == "UpdateNames") {
+      names = json.names;
+      res = "";
+      names.forEach(name => {
+        res += "<div class='pointsBG'><a>" + name + ":</a><b class='pointString' name='" + name + "'> " + (points[name.replace(/ /g, "_")] != null ? points[name.replace(/ /g, "_")] : 0) + " </b> </div>";
+      });
+      
+      $("#Points").html(res);
+    }
+
+    if(json.MessageType=="UpdatePoints") {
+      console.log(json.name.replace(/ /g, "_"));
+      var prePoints = points[json.name.replace(/ /g, "_")] ? points[json.name.replace(/ /g, "_")] : 0;
+      points[json.name.replace(/ /g, "_")] = json.points;
+      console.log(points[json.name.replace(/ /g, "_")]);
+      console.log("PRE: " + prePoints + ", CUR: " + json.points);
+        animateValue($(".pointString[name='" + json.name + "']"), parseInt(prePoints), parseInt(json.points), Math.abs(parseInt(prePoints)- parseInt(json.points)));
+       
+    }
+  };
+
+$("#inputField").hide();
+var currentMousePos = { x: -1, y: -1 };
+$(document).mousemove(function(event) {
+    currentMousePos.x = event.pageX;
+    currentMousePos.y = event.pageY;
+});
+
+function animateValue(obj, start, end, duration) {
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    obj.html(Math.floor(progress * (end - start) + start));
+    if (progress < 1) {
+      window.requestAnimationFrame(step);
+    }
+  };
+  window.requestAnimationFrame(step);
+}
+
+function sendGuess() {
+  exampleSocket.send(JSON.stringify({"MessageType": "guess", value: $("#schatzIn").val(), code:queryString})); 
+}
+
+function sendLocation(location) {
+  exampleSocket.send(JSON.stringify({"MessageType": "location", value: location, code:queryString})); 
+}
+
+function buzz() {
+  exampleSocket.send(JSON.stringify({"MessageType": "buzz", code:queryString})); 
+}
+
+function sendName() {
+  exampleSocket.send(JSON.stringify({"MessageType": "AddName", name: $("#nameBox").val(), code:queryString})); 
+  $("#addName").removeClass("scaled");
+}
+
+function getAllData() {
+  console.log("Get Game");
+  $.ajax({
+    type: "GET",
+    url: "/getGame/" + queryString,
+    contentType: "application/json; charset=utf-8",
+    dataType: "json",
+    success: function(data) {
+      categories = data.categories;
+      pointCategories = data.pointCategories;
+      categoryNames = data.categoryNames;
+      rebuildTable();
+    }
+  });
+}
+
+
+
+
+function updateCategory(index, text) {
+    categoryNames[index] = text.value;
+}
+
+
+xes = [];
+
+function rebuildTable() {
+
+  var container = $('.table'),
+  tableNew = $('<table class="pointField">');
+  container.empty();
+  var pointCol = 0;
+  var th = $('<tr>');
+    th.append('<th>Punkte</th>');
+  tableNew.append(th)
+  pointCategories.forEach(function(text) {
+    var td = $('<tr>');
+      var inpu = $('<td>' + text + '</td>');
+      inpu.css({margin: 0,
+  top: "50%",
+  transform: "translateY(-0%)"});
+    td.append(inpu);
+    
+    tableNew.append(td);
+  });
+  //tableNew.append(trNew);
+
+  container.append(tableNew);
+
+  var table = $('<table class="GameField"><tbody class="tbodyGameField">');
+
+
+  tr = $('<tr class="trGameField">');
+  catCount = 0;
+categoryNames.forEach(function(category) {
+    tr.append('<th><div class="HeaderDiv">' + category + '</div></th>');
+    catCount += 1;
+});
+  table.append(tr);
+
+
+
+var row = 0, column = 0;
+var i = 0;
+categories.forEach(function(category) {
+    column = 0;
+  var tr = $('<tr>');
+    category.forEach(function(text) {
+      
+    var div = $('<div class="tableCell' + (text[2] ? "" : '') + '" x = ' + column + ' y= ' + row +'>');
+    if(text[2] && (xes.some(el => el.x === column && el.y === row))) {
+      div.attr('class', "tableCellDeactivated");
+    }
+    else if (text[2]) {
+      div.css({transform: "rotateY(0deg)"});
+      div.animateRotate(0, -90, 0, 100);
+      setTimeout(function() {animateDeactivate(div); }, 500);
+      xes.push({x: column, y: row});
+    }
+    if(!animationPlayed) {
+      div.css({transform: "rotateY(-90deg)"});
+      div.animateRotate(-90, 0, column*100 + row * 100, 100);
+    }
+    div.append( pointCategories[row]);
+    
+    var td = $('<td onclick="editNode(' + row + ', ' + column+')">');
+    td.append(div);
+    tr.append(td);
+    column += 1;
+    i++;
+  });
+  table.append(tr);
+  row+=1;
+});
+if(!animationPlayed) {
+  setTimeout(() => {
+  $("#addName").addClass("scaled");
+}, 1000);
+}
+animationPlayed = true;
+
+
+
+
+
+container.append(table);
+}
+
+function animateDeactivate(el) {
+  el.attr("class", "tableCellDeactivated");
+  el.css({transform: "rotateY(-90deg)"});
+  el.animateRotate(-90, 0 ,0,100);
+}
+
+$.fn.animateRotate = function(startAngle, endAngle, delay, duration, complete, easing){
+    return this.each(function(){
+        var elem = $(this);
+
+        $({deg: startAngle}).delay(delay).animate({deg: endAngle}, {
+            duration: duration,
+            easing: easing,
+            step: function(now){
+                elem.css({
+                  '-moz-transform':'rotateY('+now+'deg)',
+                  '-webkit-transform':'rotateY('+now+'deg)',
+                  '-o-transform':'rotateY('+now+'deg)',
+                  '-ms-transform':'rotateY('+now+'deg)',
+                  'transform':'rotateY('+now+'deg)'
+                });
+            },
+            complete: complete || $.noop
+        });
+    });
+};
+</script>
+
+</body>
+</html>

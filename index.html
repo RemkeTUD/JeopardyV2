@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="description" content="Webpage description goes here" />
+  <meta charset="utf-8">
+  <title>NerdQuiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script
+			  src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
+			  integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30="
+        crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet"  href="/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"> 
+  <script src='https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css' rel='stylesheet' />
+</head>
+
+<body id="body">
+  
+<div class="container" style="align-items: center;">
+  <div class="table">
+      
+  </div>
+</div>
+<div class="menuContainer">
+  <button onclick="addRow()">Add Row</button>
+  <button onclick="removeRow()">Remove Row</button>
+  <button onclick="addColumn()">Add Column</button>
+  <button onclick="removeColumn()">Remove Column</button>
+  <button style="border-color: rgba(255, 0, 0, 0.575);" onclick="createGame()">Create Game</button>
+</div>
+
+<div class="inputField" id="inputField">
+  <img class="closeButton" src="/close.png" onclick="closeContext()"></img>
+  <p>Bearbeiten</p>
+  <p>Frage: <input style="float:lef; width: 100%;" id="question" value = "..."></input></p>
+  <div class="centeredDiv" style="display: inline-block;">
+    <img src="/camera.png" class="dropZone" id="dropZoneQuestionImage" >
+  </img>
+    <img src="/audio.png" onclick="playAnswerAudio()" class="dropZone" id="dropZoneQuestionAudio" ></img>
+    <audio  id="audioPlayQuestion" autoplay loop>
+      <source id="audioQuestion" type="audio/mpeg">><source>
+    </audio>
+  </div>
+  <hr>
+  <p>Antwort: <input style="width: 100%;" id="answer" value = "..."></input>
+    <input type="number" style="width: 100%;" id="answerSchatz" value = "0"></input></p>
+  
+    <p>Fragenart: 
+      <select id="schatz" name="schatzF" onchange="toggleSchatz(this)">
+        <option value="Buzzer">Buzzer</option>
+        <option value="schatzfrage">Schätzfrage</option>
+        <option value="Location" selected>Kartenfrage</option>
+      </select>
+  
+    </p>
+  <div class="centeredDiv" style="display: inline-block;">
+    <img src="/camera.png" class="dropZone" id="dropZoneAnswerImage" >
+      <img id="closedropZoneAnswerImage" onclick="resetImage('dropZoneAnswerImage', 5)" src="/close.png" style="position: relative; top: -5pt;left: -10pt;" width="20pt" height="20pt"></img>
+    </img>
+  </div>
+  <div id = "map">
+  <div id='mapC' style='width: 500px; height: 400px;'>
+  </div>
+  <p>Long: <input type="number" style="width: 30%;" id="longitude" value = "0" step="any"></input></p>
+  <p>Lati: <input type="number" style="width: 30%;" id="latitude" value = "0" step="any"></input></p>
+</div>
+  <button style="width: 95%;" onclick="applyInputs()">Apply</button>
+</div>
+
+<div id="GameStartScreen">
+  <a id = "Code"></a>
+  <a id = "CodeAdmin"></a>
+  <button onclick="closeGameStart()">Close</button>
+</div>
+
+<input id="file-inputImageAnswer" type="file" name="name" style="display: none;" accept="image/*"/>
+<input id="file-inputImageQuestion" type="file" name="name" style="display: none;"  accept="image/*"/>
+
+<input id="file-inputAudioQuestion" type="file" name="name" style="display: none;"  accept="audio/*"/>
+
+<script>
+
+mapboxgl.accessToken = 'pk.eyJ1IjoicmVta2V0dWQiLCJhIjoiY2s1YXR5cDdtMWFkbjNlcXg1eHJiOW52MCJ9.V3UJWV-eH3FwK3PN4bYoPA';
+var map = new mapboxgl.Map({
+container: 'mapC',
+style: 'mapbox://styles/mapbox/streets-v11', // stylesheet location
+center: [-74.5, 40], // starting position [lng, lat]
+zoom: 1,
+maxZoom: 20
+});
+
+
+var firstLt = null;
+var MapEl;
+
+$("#longitude").on('input', function(e) {
+  var newLngLtd = new mapboxgl.LngLat($("#longitude").val(),$("#latitude").val());
+  if(firstLt == null) {
+    firstLt = newLngLtd;
+    MapEl = document.createElement('div');
+    MapEl.className = 'marker';
+  // make a marker for each feature and add to the map
+  new mapboxgl.Marker(MapEl)
+    .setLngLat(newLngLtd)
+    .addTo(map);
+  } else {
+
+    console.log('A click event has occurred at ' + (newLngLtd.distanceTo(firstLt) / 1000) + ' km');
+    firstLt = newLngLtd;
+
+  // make a marker for each feature and add to the map
+  new mapboxgl.Marker(MapEl)
+    .setLngLat(newLngLtd)
+    .addTo(map);
+  }
+
+  
+  categories[currentX][currentY][8] = {long: newLngLtd.lng, lat: newLngLtd.lat};
+});
+
+$("#latitude").on('input', function(e) {
+  var newLngLtd = new mapboxgl.LngLat($("#longitude").val(),$("#latitude").val());
+  if(firstLt == null) {
+    firstLt = newLngLtd;
+    MapEl = document.createElement('div');
+    MapEl.className = 'marker';
+  // make a marker for each feature and add to the map
+  new mapboxgl.Marker(MapEl)
+    .setLngLat(newLngLtd)
+    .addTo(map);
+  } else {
+
+    console.log('A click event has occurred at ' + (newLngLtd.distanceTo(firstLt) / 1000) + ' km');
+    firstLt = newLngLtd;
+
+  // make a marker for each feature and add to the map
+  new mapboxgl.Marker(MapEl)
+    .setLngLat(newLngLtd)
+    .addTo(map);
+  }
+  
+  categories[currentX][currentY][8] = {long: newLngLtd.lng, lat: newLngLtd.lat};
+});
+
+map.on('click', function(e) {
+  
+  $("#longitude").val(e.lngLat.lng);
+  $("#latitude").val(e.lngLat.lat);
+  if(firstLt == null) {
+    firstLt = e.lngLat;
+    MapEl = document.createElement('div');
+    MapEl.className = 'marker';
+  // make a marker for each feature and add to the map
+  new mapboxgl.Marker(MapEl)
+    .setLngLat(e.lngLat)
+    .addTo(map);
+  } else {
+
+    console.log('A click event has occurred at ' + (e.lngLat.distanceTo(firstLt) / 1000) + ' km');
+    firstLt = e.lngLat;
+
+  // make a marker for each feature and add to the map
+  new mapboxgl.Marker(MapEl)
+    .setLngLat(e.lngLat)
+    .addTo(map);
+  }
+  
+  categories[currentX][currentY][8] = {long: e.lngLat.lng, lat: e.lngLat.lat};
+  console.log(categories);
+});
+
+$("#answerSchatz").hide();
+$("#map").hide();
+
+
+$("#schatz").val("Buzzer");
+
+$("#closedropZoneAnswerImage").hide();
+var dropZoneImageQuestion = document.getElementById('dropZoneQuestionImage');
+var dropZoneAudioQuestion = document.getElementById('dropZoneQuestionAudio');
+var dropZoneImageAnswer = document.getElementById('dropZoneAnswerImage');
+
+function resetImage(name, id) {
+  
+  $("#" + name).attr("src", "/camera.png");
+  $("#close" + name).hide();
+  categories[currentX][currentY][id] = null;
+}
+
+function toggleSchatz(input) {
+  if($("#schatz option:selected").val() == "schatzfrage"){
+    $("answer").attr("checked", "number");
+    $("#answerSchatz").show();
+    $("#answer").hide();
+    $("#map").hide();
+  }
+  if($("#schatz option:selected").val() == "Buzzer"){
+    $("answer").attr("checked", "text");
+
+    $("#answerSchatz").hide();
+    $("#answer").show();
+    $("#map").hide();
+  }
+  if($("#schatz option:selected").val() == "Location"){
+    $("answer").attr("checked", "text");
+
+    $("#answerSchatz").hide();
+    $("#answer").show();
+    
+    $("#map").show();
+  }
+}
+
+function playAnswerAudio() {
+
+  var audioControl = document.getElementById("audioPlayQuestion");
+  if(audioControl.paused)
+    audioControl.load();
+    else {
+      audioControl.pause();
+    }
+
+}
+
+function preventDrop(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+}
+
+function loadData(e, files, typ, name, isAudio = false, index) {
+    e.stopPropagation();
+    e.preventDefault();
+    var files = files; // Array of all files
+
+    for (var i=0, file; file=files[i]; i++) {
+        if (file.type.match(typ)) {
+            var reader = new FileReader();
+            reader.onload = function(e2) {
+              if(isAudio) {
+                console.log("Audio Set");
+                var img = document.getElementById(index == 6 ? "audioAnswer" : "audioQuestion");
+                img.src= e2.target.result;
+                categories[currentX][currentY][index] = e2.target.result;
+                var audioControl = document.getElementById(index == 6 ? "audioPlayAnswer" : "audioPlayQuestion");
+                audioControl.load();
+              }
+              else {
+
+                var img = document.getElementById(name);
+                img.src= e2.target.result;
+                $("#close" + name).show(100);
+                categories[currentX][currentY][index] = e2.target.result;
+                console.log(e2.target.result);
+              }
+            }
+            reader.readAsDataURL(file); // start reading the file data.
+        }
+    }
+}
+
+// Optional.   Show the copy icon when dragging over.  Seems to only work for chrome.
+dropZoneImageAnswer.addEventListener('dragover', preventDrop);
+dropZoneImageQuestion.addEventListener('dragover', preventDrop);
+dropZoneAudioQuestion.addEventListener('dragover', preventDrop);
+
+// Get file data on drop
+dropZoneImageAnswer.addEventListener('drop', function(e) {loadData(e, e.dataTransfer.files, /image.*/, "dropZoneAnswerImage", false, 5)});
+dropZoneImageQuestion.addEventListener('drop', function(e) {loadData(e, e.dataTransfer.files, /image.*/, "dropZoneQuestionImage", false, 3)});
+dropZoneAudioQuestion.addEventListener('drop', function(e) {loadData(e, e.dataTransfer.files, /audio.*/, "dropZoneQuestionAudio", true, 4)});
+
+document.getElementById("file-inputImageAnswer").onchange = e => { 
+  loadData(e, e.target.files, /image.*/, "dropZoneAnswerImage", false, 5);
+}
+document.getElementById("file-inputImageQuestion").onchange = e => { 
+  loadData(e, e.target.files, /image.*/, "dropZoneQuestionImage", false, 3);
+}
+
+document.getElementById("file-inputAudioQuestion").onchange = e => { 
+  loadData(e, e.target.files, /audio.*/, "dropZoneQuestionAudio", true, 4);
+}
+
+dropZoneImageAnswer.addEventListener('click', function(e) {
+  $('#file-inputImageAnswer').trigger('click'); 
+});
+dropZoneImageQuestion.addEventListener('click', function(e) {
+  $('#file-inputImageQuestion').trigger('click'); 
+});
+dropZoneAudioQuestion.addEventListener('click', function(e) {
+  $('#file-inputAudioQuestion').trigger('click'); 
+});
+
+categoryNames = ["?", "?"];
+
+categories = [[["Test Question 1", "Test Answer", false, null, null, null, null, "Buzzer", null],["Test Question 2", "Test Answer", false, null, null, null, null, "Buzzer", null]],[["Test Question 3", "Test Answer", false, null, null, null, null, "Buzzer", null],["Test Question 4", "Test Answer", false, null, null, null, null, "Buzzer", null]]];
+
+pointCategories = [100,200];
+
+currentX = 0, currentY = 0;
+
+dargStartX = 0, dragStartY = 0;
+
+dragStartOffset = null;
+
+isCurrentDrag = false;
+
+currentInOffset = null;
+
+originalOffest = null;
+
+currentGameCode = -1;
+
+console.log("PathName: " + window.location.pathname);
+
+if(window.location.pathname != "/")
+  currentGameCode = parseInt(window.location.pathname.slice(1));
+
+if(currentGameCode!=-1) {
+  getAllData();
+  rebuildTable();
+}
+
+function getAllData() {
+  console.log("Get Game");
+  $.ajax({
+    type: "GET",
+    url: "/getGame/" + currentGameCode,
+    contentType: "application/json; charset=utf-8",
+    dataType: "json",
+    success: function(data) {
+      console.log(data);
+      categories = data.categories;
+      pointCategories = data.pointCategories;
+      categoryNames = data.categoryNames;
+      rebuildTable();
+    }
+  });
+}
+
+$("#GameStartScreen").hide();
+$("#inputField").hide();
+rebuildTable();
+var currentMousePos = { x: -1, y: -1 };
+$(document).mousemove(function(event) {
+    currentMousePos.x = event.pageX;
+    currentMousePos.y = event.pageY;
+});
+
+function createGame() {
+  console.log("Create Game");
+  $.ajax({
+    type: "PUT",
+    url: currentGameCode == -1 ? "/createGame" : "/createGame/" + currentGameCode,
+    data: JSON.stringify({categories: categories, pointCategories: pointCategories, categoryNames: categoryNames}),
+    contentType: "application/json; charset=utf-8",
+    dataType: "json",
+    success: function(data) {
+      console.log("Test");
+      console.log(data.code);
+      currentGameCode = data.code;
+      setGameStartActive();
+    }
+  });
+}
+
+function setGameStartActive() {
+  $("#GameStartScreen").find("#Code").html(window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "") +  "/GameView/"+currentGameCode);
+  $("#GameStartScreen").find("#Code").attr("href",window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "") +  "/GameView/"+currentGameCode);
+  $("#GameStartScreen").find("#CodeAdmin").html(window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "") +  "/GameViewAdmin/"+currentGameCode);
+  $("#GameStartScreen").find("#CodeAdmin").attr("href",window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "") +  "/GameViewAdmin/"+currentGameCode);
+  $("#GameStartScreen").show();
+}
+
+function closeGameStart() {
+  $("#GameStartScreen").hide();
+}
+
+function closeContext() {
+  
+  var audioControl = document.getElementById("audioPlayQuestion");
+  audioControl.pause();
+  $("#inputField").hide(100);
+}
+
+function applyInputs() {
+  var audioControl = document.getElementById("audioPlayQuestion");
+  audioControl.pause();
+  categories[currentX][currentY][0] = $("#inputField").find("#question").val();
+  if($("#schatz option:selected").val() != "schatzfrage")
+    categories[currentX][currentY][1] = $("#inputField").find("#answer").val();
+  else
+    categories[currentX][currentY][1] = $("#inputField").find("#answerSchatz").val();
+
+  categories[currentX][currentY][7] = $("#schatz option:selected").val();
+  rebuildTable();
+    $("#inputField").hide(100);
+}
+
+function updateCategory(index, text) {
+    categoryNames[index] = text.value;
+}
+
+function addRow() {
+   newAr = [];
+   categoryNames.forEach(function(category) {
+        newAr.push(["?","!", false, null, null, null, null, "Buzzer", null]);
+    });
+    categories.push(newAr);
+    pointCategories.push(300);
+    rebuildTable();
+    $("#inputField").hide(100);
+}
+function removeRow() {
+    categories.pop();
+    pointCategories.pop();
+    rebuildTable();
+}
+
+function addColumn() {
+    categoryNames.push("Kategorie");
+    categories.forEach(function(category) {
+        category.push(["?", "!", false, null, null, null, null, "Buzzer", null]);
+    });
+    rebuildTable();
+}
+
+function removeColumn() {
+    categoryNames.pop();
+    categories.forEach(function(category) {
+        category.pop();
+    });
+    rebuildTable();
+}
+
+function editNode(x,y) {
+
+  
+  if(categories[x][y][7] == "Buzzer"){
+    $("#answerSchatz").hide();
+    $("#map").hide();
+    $("#answer").show();
+  } else if(categories[x][y][7] == "schatzfrage") {
+    $("#answerSchatz").show();
+    $("#answer").hide();
+    $("#map").hide();
+  } else {
+    $("#answerSchatz").hide();
+    $("#answer").show();
+    $("#map").show();
+  }
+  $("#schatz").val(categories[x][y][7]);
+
+  $("#inputField").show(100);
+  if(categories[x][y][5] != null)
+    $("#inputField").find("#dropZoneAnswerImage").attr("src", categories[x][y][5]);
+  else
+    $("#inputField").find("#dropZoneAnswerImage").attr("src", "/camera.png");
+
+    
+  if(categories[x][y][3] != null)
+    $("#inputField").find("#dropZoneQuestionImage").attr("src", categories[x][y][3]);
+  else
+    $("#inputField").find("#dropZoneQuestionImage").attr("src", "/camera.png");
+
+  if(categories[x][y][4] != null)
+    $("#inputField").find("#audioQuestion").attr("src", categories[x][y][4]);
+  else
+    $("#inputField").find("#audioQuestion").attr("src", "");
+
+    
+  if(categories[x][y][7] == "Buzzer") {
+    
+    $("#inputField").find("#question").val(categories[x][y][0]);
+  }
+  else if(categories[x][y][7] == "schatzfrage") {
+    $("#inputField").find("#answerSchatz").val(categories[x][y][1]);
+    $("#inputField").find("#question").val(categories[x][y][0]);
+}
+  else {
+    $("#inputField").find("#question").val(categories[x][y][0]);
+    $("#longitude").val(categories[x][y][8].long);
+    $("#latitude").val(categories[x][y][8].lat);
+    var latlng = new mapboxgl.LngLat(categories[x][y][8].long, categories[x][y][8].lat);
+    if(firstLt == null) {
+    MapEl = document.createElement('div');
+    MapEl.className = 'marker';
+    firstLt = latlng;
+  }
+    new mapboxgl.Marker(MapEl)
+    .setLngLat(latlng)
+    .addTo(map);
+  }
+
+  $("#inputField").find("#answer").val(categories[x][y][1]);
+
+  currentX = x;
+  currentY = y;
+    //var newText = prompt("Enter Text", "...?");
+    //if(newText != null){
+        //categories[x][y] = newText;
+        //rebuildTable();
+    //}
+}
+function updatePoints(pointRow, field) {
+  pointCategories[pointRow] = parseInt(field.value,10);
+}
+function rebuildTable() {
+
+  var container = $('.table'),
+  tableNew = $('<table class="pointField">');
+  container.empty();
+  var pointCol = 0;
+  var th = $('<tr>');
+    th.append('<th>Punkte</th>');
+  tableNew.append(th)
+  pointRow = 0;
+  pointCategories.forEach(function(text) {
+    var td = $('<tr>');
+      var inpu = $('<td><input  style="width:90%" onchange="updatePoints('+ pointRow +', this)" type="number" value = "' + text + '"></input></td>');
+      inpu.css({margin: 0,
+  top: "50%",
+  transform: "translateY(-0%)"});
+    td.append(inpu);
+    
+    tableNew.append(td);
+
+    pointRow+=1;
+  });
+  //tableNew.append(trNew);
+
+  container.append(tableNew);
+
+  var table = $('<table class="GameField"><tbody class="tbodyGameField">');
+
+
+  tr = $('<tr>');
+  catCount = 0;
+categoryNames.forEach(function(category) {
+    tr.append('<th><input class="CategoryInput" value = "' + category + '" onchange = updateCategory(' + catCount + ',this) +></input></th>');
+    catCount += 1;
+});
+  table.append(tr);
+
+
+
+var row = 0, column = 0;
+
+categories.forEach(function(category) {
+    column = 0;
+  var tr = $('<tr>');
+    category.forEach(function(text) {
+      
+    var div = $('<div class="tableCell" x = ' + column + ' y= ' + row +'>');
+    div.append( "<div class='tableText'>" + text[0] + "</div>");
+    div.mouseover(function() {
+      if(isCurrentDrag != null && isCurrentDrag != this && currentInOffset != this) {
+        if(originalOffest != null) {
+          //$(currentInOffset).parent().css({position: "static"});
+          $(currentInOffset).parent().offset(originalOffest);
+        }
+        currentInOffset = this;
+        
+        var offset = $(this).parent().offset();
+        originalOffest = offset;
+        var xPos = offset.left;
+        var yPos = offset.top;
+        $(this).parent().offset(dragStartOffset);
+        //$(this).parent().css({position: "absolute"});
+        //$(this).parent().animate({left: dragStartOffset.left, top: dragStartOffset.top});
+      }
+    });
+    div.draggable({
+      start: function(event, ui) {
+        currentInOffset = null;
+        console.log("Start Drag");
+        var offset = $(this).parent().offset();
+        var xPos = offset.left;
+        var yPos = offset.top;
+        dargStartX = xPos;
+        dragStartY = yPos;
+        dragStartOffset = offset;
+        $(this).css("transition-duration", "0.0s");
+        isCurrentDrag = this;
+        $(this).css({pointerEvents:"none"});
+      },
+      stop: function(event, ui) {
+        console.log("Stop Drag");
+        
+        x1 = $(isCurrentDrag).attr("x");
+        x2 = $(currentInOffset).attr("x");
+        y1 = $(isCurrentDrag).attr("y");
+        y2 = $(currentInOffset).attr("y");
+        if(currentInOffset == null) {
+          isCurrentDrag = null;
+        rebuildTable();
+        editNode( y1 ,   x1);
+          return;
+        }
+        temp = categories[y1][x1];
+        categories[y1][x1] = categories[y2][x2];
+        categories[y2][x2] = temp;
+
+        rebuildTable();
+        isCurrentDrag = null;
+      }
+    });
+    var td = $('<td onclick="editNode(' + row + ', ' + column+')">');
+    td.append(div);
+    tr.append(td);
+    column += 1;
+  });
+  table.append(tr);
+  row+=1;
+});
+
+
+
+container.append(table);
+}
+
+</script>
+
+</body>
+</html>

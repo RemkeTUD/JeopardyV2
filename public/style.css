@@ -1,0 +1,534 @@
+* {
+    scrollbar-width: none;  /* Firefox */
+    font-family: Helvetica, Arial,sans-serif;
+    font-weight: thin;
+}
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(to right, #ffcb00, #c59706);
+    width: 100vw;
+    
+}
+tr:nth-child(even) .tableCell {
+    background-color: #00a5a6;
+}
+tr:nth-child(2n+1) .tableCell {
+    background-color: #ed7280;
+}
+tr:first-child .tableCell {
+    background-color: #ffffff;
+}
+
+#guessArea {
+    display: flex;
+    justify-content: space-around;
+}
+#NamePointSetter {
+    display: flex;
+    justify-content: space-around;
+}
+
+.tableCell:hover {
+    transition-property: all;
+    transition-duration: 0.3s;
+    transform: scale(1.1) rotateZ(0deg);
+    
+    box-shadow: 0px 0px 7px 3px #0000005e;
+}
+
+.tableCell {
+    transition-property: all;
+    transition-duration: 0.3s;
+    transform: scale(1);
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    height: 40pt;
+    position:relative;
+    text-align: center;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex;
+    width: 90%;
+    min-width: 0%;
+    overflow: visible;
+    
+    box-shadow: 3pt 3pt 1px 0.4px #0000001c;
+  justify-content: center;
+  align-content: center;
+  flex-direction: column;
+  font-weight: bold;
+  white-space: normal;
+  word-wrap: break-word;
+}
+.tableCell::-webkit-scrollbar {
+  display: none;
+  -ms-overflow-style: none; /* IE 11 */
+    scrollbar-width: none; /* Firefox 64 */
+}
+
+.tableText {
+    overflow: auto;
+}
+
+.tableText::-webkit-scrollbar {
+  display: none;
+  -ms-overflow-style: none; /* IE 11 */
+    scrollbar-width: none; /* Firefox 64 */
+}
+
+.tableCellDeactivated {
+    transition-property: all;
+    transition-duration: 0.3s;
+    transform: scale(1);
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    height: 40pt;
+    position:relative;
+    text-align: center;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex;
+    width: 90%;
+    min-width: 0%;
+    overflow: visible;
+    
+    box-shadow: 3pt 3pt 1px 0.4px #0000001c;
+  justify-content: center;
+  align-content: center;
+  flex-direction: column;
+  font-weight: bold;
+  white-space: normal;
+  word-wrap: break-word;
+  background-color: gray;
+}
+
+.table {
+    white-space: nowrap;
+    overflow-x: visible;
+    min-width: 90%;
+    
+}
+.GameField {
+    width:80vw;
+    display:inline-block;
+    table-layout: fixed;
+    overflow-x: scroll;
+}
+.GameField::-webkit-scrollbar {
+    display: none;
+}
+.trGameField {
+    width: 100%;
+}
+tbody {
+    width: 100%;
+    display: table;
+}
+.pointField {
+    display: inline-block;
+    text-align: center;
+    word-wrap: break-word;
+    white-space: normal;
+    overflow: hidden;
+    width: 10vw;
+    max-width: 60pt;
+}
+@media only screen and (max-width: 600px) {
+    .pointField {
+        max-width: 0pt;
+        display: none;
+    }
+    
+    .GameField {
+        width:90vw;
+    }
+    table {
+        margin: 0pt;
+    }
+    th {
+        
+        background-color: rgba(0, 0, 0, 0.041);
+        box-shadow: 0 0 0.2px 0.2px rgba(0, 0, 0, 0.137);
+        border-radius: 3pt;
+    }
+    .inputField {
+        width: 80%;
+    }
+  }
+
+  .questionImg {
+    max-height: 30vh; min-height: 0vh; max-width: 100%;
+    margin: 5pt;
+    
+    box-shadow: 0px 0px 4px 1px #0000005e;
+  }
+  img[src=""] {
+    display: none;
+ }
+
+td {
+    padding-left: 2pt;
+    padding-right: 2pt;
+    text-align: center;
+    height: 45pt;
+    
+    min-height: 45pt;
+    max-height: 45pt;
+}
+
+th {padding-left: 2pt;
+    padding-right: 2pt;
+    text-align: center;
+    height: 52pt;
+    width: 52pt;
+    max-width: 0pt;
+    min-width: 0pt;
+    
+    min-height: 52pt;
+    max-height: 52pt;
+    overflow: hidden;
+}
+
+
+table {
+    background-color: #F2EBD5;
+    border-radius: 5pt;
+    padding: 5px;
+    margin-left:10pt; 
+    margin-right:10pt;
+    
+    box-shadow: 0px 0px 7px 3px #0000005e;
+}
+
+.inputField {
+    background-color: #F2EBD5;
+    border-radius: 5pt;
+    position: fixed; /* or absolute */
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    box-shadow: 0px 0px 3px 3px #0000005e;
+    padding: 15pt;
+    
+    text-align: center;
+
+    max-height:  80%;
+    overflow: scroll;
+    overflow-x: hidden
+}
+.container {
+    position: absolute;
+    left: 50%;
+    top: 10pt;
+    transform: translate(-50%, -0%);
+}
+.menuContainer {
+    position: fixed;
+    left: 50%;
+    top: 100%;
+    transform: translate(-50%, -110%);
+    max-width: 90%;
+    width: max-content;
+    text-align: center;
+}
+
+#buzzerBut {
+    background-color: rgba(255, 0, 0, 0);
+    width: 60pt;
+    height: 60pt;
+    cursor: pointer;
+    
+    transform: scale(1.0);
+    transition: all 0.2s;
+}
+#buzzerBut:hover {
+    transform: scale(1.1);
+    transition: all 0.2s;
+}
+
+button {
+    
+    transition-property: all;
+    transition-duration: 0.3s;
+    background-color: rgb(77, 74, 67); /* Green */
+  border: none;
+  color: white;
+  padding: 7px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 2pt 2pt;
+  box-shadow: 0px 0px 0px 0px #0000005e;
+  cursor: pointer;
+  border-radius: 3pt;
+  
+}
+button:hover {
+    
+    transition-property: all;
+    transition-duration: 0.3s;
+    transform: scale(1.1);
+    box-shadow: 0px 0px 10px 5px #0000005e;
+}
+input {
+    padding: 3px 3px;
+    border: solid;
+    border-width: 1pt;
+    border-color: rgba(0, 0, 0, 0.507);
+    border-radius: 4px;
+    background-color: #f1f1f1;
+    text-align: center;
+    font-size: 11pt;
+    font-size-adjust: inherit;
+    max-width: 90% ;
+  }
+  .closeButton {
+      position: absolute;
+      left: 0pt;
+      top: 0pt;
+      width: 20pt;
+      height: 20pt;
+      cursor: pointer;
+      float: left;
+      color: rgba(128, 128, 128, 0.13);
+  }
+  .dropZone {
+    background-color: none;
+    width: 60pt; height: 60pt; float: left;
+    border: solid;
+    border-color: black;
+    border-radius: 10pt;
+    margin: 0 5pt;
+
+  }
+
+  hr { 
+    border: 0;
+    height: 1px;
+    background-color:rgba(0, 0, 0, 0.433);
+    transform: scaleX(0.98);
+}
+#GameStartScreen {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    background-color: #F2EBD5;
+    text-align: center;
+    position:fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+    width: 300pt;
+    height: 200pt;
+    display: flex;
+  justify-content: center;
+  align-content: center;
+  flex-direction: column;
+  border-radius: 7pt;
+    border-color: rgb(0, 0, 0);
+    border-width: 3pt;
+    border-style: solid ;
+}
+
+#showQuestion {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    background-color: #F2EBD5;
+    text-align: center;
+    position:fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0.0);
+    z-index: 200;
+    min-width: 300pt;
+    min-height: 200pt;
+    max-width: 80%;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    flex-direction: column;
+    border-radius: 7pt;
+    box-shadow: 0px 0px 3px 3px #0000005e;
+    transition: all 0.3s ease-in-out;
+    
+}
+#showQuestion.scaled {
+    transform: translate(-50%, -50%) scale(1);
+}
+.marker {
+    background: url('marker.png');
+    background-size: cover;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .markerPerson {
+    background: url('markerRed.png');
+    background-size: cover;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+ #markerLabel {
+      transform: translateY(15pt);
+  }
+
+.InfoBox {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    background-color: #F2EBD5;
+    text-align: center;
+    position:fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+    width: 300pt;
+    height: 200pt;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    flex-direction: column;
+    border-radius: 7pt;
+    box-shadow: 0px 0px 7px 3px #0000005e;
+}
+
+.miniButton {
+    
+  padding: 0px 0px;
+    width: 16pt;
+    height: 16pt;
+    float: left;
+    border-width: 1px;
+}
+
+#addName {
+    transition: all 0.3s;
+    transform: translate(-50%, -50%) scale(0);
+}
+#addName.scaled {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.miniText {
+    
+  margin-left: 5pt;
+  margin-right: 5pt;
+  margin-bottom: 5pt;
+  margin-top: 5pt;
+    float: left;
+}
+
+.centeredDiv{
+    display: inline-block;
+}
+
+.namePointContainer {
+    display: inline;
+    padding: 3pt;
+    white-space: nowrap;
+}
+
+.pointsField{
+    text-align: center;
+    width: 50pt;
+}
+
+#nameBox{
+    width: 80%;
+    display: inline-block;
+}
+
+.HeaderDiv{
+    text-align: center;
+    
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.centerImage {
+    
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+
+}
+.ui-tooltip {
+    text-align: center;
+}
+
+.guessBG {
+    background-color: rgb(197, 197, 197);
+    float: left;
+    padding: 4pt 4pt;
+    margin: 2pt 2pt;
+    border-radius: 5pt;
+    border-width: 1pt;
+}
+
+.guess {
+    color: rgb(85, 0, 0);
+    font-weight: bold;
+}
+
+.pointsBG {
+    transition-property: all;
+    transition-duration: 0.3s;
+    background-color: rgb(221, 221, 221); /* Green */
+  border: none;
+  color: rgb(0, 0, 0);
+  padding: 7px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 2pt 2pt;
+  box-shadow: 0px 0px 0px 0px #0000005e;
+  border-radius: 3pt;
+}
+
+#Points {
+    vertical-align: middle;
+    
+}
+
+.percentage {
+    position: fixed;
+    left: 10pt;
+    bottom: 10pt;
+}
+
+.RevealResult {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    max-width: 80%;
+    max-height: 80%;
+    transform: translate(-50%, -50%) scale(0);
+    
+  animation-name: popUp;
+  animation-duration: 1s;
+  animation-timing-function: ease-in-out;
+  z-index: 1000;
+  
+}
+@keyframes popUp {
+    0%   {transform: translate(-50%, -50%) scale(0);}
+    25%  {transform: translate(-50%, -50%) scale(1);}
+    75%  {transform: translate(-50%, -50%) scale(1);}
+    100% {transform: translate(-50%, -50%) scale(0);}
+  }

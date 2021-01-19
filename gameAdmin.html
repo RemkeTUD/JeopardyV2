@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="description" content="Webpage description goes here" />
+  <meta charset="utf-8">
+  <title>NerdQuiz</title>
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
+  <meta name="author" content="">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script
+			  src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
+			  integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30="
+        crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet"  href="/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"> 
+  <script src='https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css' rel='stylesheet' />
+<script>
+  $( function() {
+    $( document ).tooltip();
+  } );
+  </script>
+</head>
+
+<body id="body">
+  
+<div class="container" style="align-items: center;">
+  <div class="table">
+      
+  </div>
+</div>
+
+<div id="showQuestion" class="scaled">
+  <p id="Question"></p>
+  <img class = "centerImage" style="width: 15vw; display: inline-block;" id="QuestionPicture"></img>
+  <img class = "centerImage" style="width: 15vw; display: inline-block;" id="AnswerPicture"></img>
+  <audio  id="audioPlayQuestion">
+    <source id="audioQuestion" type="audio/mpeg"><source>
+  </audio>
+
+  <div id='mapC' style='width: 500px; height: 400px;'>
+  </div>
+
+  <button id="RevealRight">Reveal Answer Right</button>
+  <button id="RevealWrong">Reveal Answer Wrong</button>
+  <div id="NamePointSetter"></div>
+  <div id="guessArea"></div>
+  <button id="CloseReveal" onclick="CloseReveal()">Close</button>
+
+</div>
+
+<div id="Buzzer" class="InfoBox">
+  <p id="BuzzerText"></p>
+  <button id="BuzzerReset" onclick="ResetBuzzer()">Reset Buzzer</button>
+  <audio  id="buzzerSound">
+    <source id="buzzerSoundSrc" src="/BuzzerSound.mp3"><source>
+  </audio>
+</div>
+
+<div class="menuContainer">
+  <div style="display:inline-block" id="Points"><a>Test: 123213</a><a>Test: 123213</a></div>
+</div>
+
+<script>
+
+mapboxgl.accessToken = 'pk.eyJ1IjoicmVta2V0dWQiLCJhIjoiY2s1YXR5cDdtMWFkbjNlcXg1eHJiOW52MCJ9.V3UJWV-eH3FwK3PN4bYoPA';
+var map = new mapboxgl.Map({
+container: 'mapC',
+style: 'mapbox://styles/mapbox/streets-v11', // stylesheet location
+center: [-74.5, 40], // starting position [lng, lat]
+zoom: 1,
+maxZoom: 20
+});
+
+MapEl = document.createElement('div');
+var para = document.createElement("P"); 
+para.id = "markerLabel";
+var textnode = document.createTextNode("Goal"); 
+para.appendChild(textnode);
+MapEl.appendChild(para);
+    MapEl.className = 'marker';
+  // make a marker for each feature and add to the map
+  new mapboxgl.Marker(MapEl)
+    .setLngLat(new mapboxgl.LngLat(0,0))
+    .addTo(map);
+
+var splittedURL = window.location.href.split("/");
+const queryString = splittedURL[splittedURL.length-1];
+console.log(queryString);
+
+categoryNames = ["?", "?"];
+
+categories = [[["Test Question 1", "Test Answer"],["Test Question 2", "Test Answer"]],[["Test Question 3", "Test Answer"],["Test Question 4", "Test Answer"]]];
+
+pointCategories = [100,200];
+
+currentX = 0, currentY = 0;
+
+dargStartX = 0, dragStartY = 0;
+
+dragStartOffset = null;
+
+isCurrentDrag = false;
+
+currentInOffset = null;
+
+originalOffest = null;
+
+names = [];
+
+namesBuzzed = [];
+
+var timestampBuzzed = 0;
+
+percentageDone = 0;
+
+currentLocation = null;
+
+MarkerDict = {};
+
+getAllData();
+  $("#Buzzer").hide();
+console.log( window.location.href.split()[2]);
+var exampleSocket  = new WebSocket("ws://" + window.location.hostname + ":8080/echo");
+exampleSocket.onopen = function (event) {
+    exampleSocket.send(JSON.stringify({"MessageType": "AddAdmin", code: queryString})); 
+  };
+  exampleSocket.onmessage = function(event) {
+    
+    console.log(event.data);
+    json = JSON.parse(event.data);
+    if(json.MessageType == "buzz") {
+      
+      if($("#BuzzerText").html() == "") {
+        document.getElementById("buzzerSound").load(); 
+        document.getElementById("buzzerSound").play(); 
+    }
+
+      console.log($("#BuzzerText").html());
+
+      
+      console.log(timestampBuzzed);
+      
+      $("#Buzzer").show();
+      if(!namesBuzzed.includes(json.name))
+      if(namesBuzzed.length == 0) {
+
+        $("#BuzzerText").html($("#BuzzerText").html() + " " + (namesBuzzed.length + 1) + ". " + json.name + "<br>");
+        
+        var date = new Date();
+        timestampBuzzed = date.getTime();
+      }
+      else {
+        var date = new Date();
+        $("#BuzzerText").html($("#BuzzerText").html() + " " + (namesBuzzed.length + 1) + ". " + json.name + " (+" + (date.getTime()-timestampBuzzed) + "ms)" + "<br>");
+      }
+
+
+      
+      namesBuzzed.push(json.name);
+      
+    }
+    
+    if(json.MessageType == "guess") {
+      console.log(json.name+": " + json.value);
+      $("#guess" + json.name.replace(/ /g, "_")).html((json.value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+      $("#diff" + json.name.replace(/ /g, "_")).html((categories[currentX][currentY][1] - json.value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+    }
+    if(json.MessageType == "location") {
+      console.log("location received");
+      
+      $("#distance" + json.name.replace(/ /g, "_")).html(((currentLocation.distanceTo(json.value) / 1000).toFixed(1) + ' km').toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+
+      MapElNew = "";
+
+    if(document.getElementById("marker" + json.name.replace(/ /g, "_")) == null){
+      MapElNew = document.createElement('div');
+    var para = document.createElement("P"); 
+    para.id = "markerLabel";
+    var textnode = document.createTextNode(json.name.replace(/ /g, "_")); 
+    para.appendChild(textnode);
+    MapElNew.appendChild(para);
+    MapElNew.className = 'markerPerson';
+    MapElNew.id = "marker" + json.name.replace(/ /g, "_");
+      }
+      else {
+      MapElNew = document.getElementById("marker" + json.name.replace(/ /g, "_"));
+      }
+  // make a marker for each feature and add to the map
+  new mapboxgl.Marker(MapElNew)
+    .setLngLat(json.value)
+    .addTo(map);
+    }
+
+    if(json.MessageType == "UpdateNames") {
+      console.log(json.names);
+      names = json.names;
+      res = "";
+      namePoints={};
+      names.forEach(name => {
+        if($(".pointsField[name='" + name + "']").length)
+          namePoints[name] = $(".pointsField[name='" + name + "']").val();
+      });
+
+      $("#Points").html("");
+      names.forEach(name => {
+        newInput = $("<input style='' type='number' step='100' class='pointsField' id='points" + name.replace(/ /g, "_") + "' name='" + name + "' value=" + (name in namePoints ? namePoints[name] : '0') + "></input> ");
+        
+        newInput.change(function() {updatePoints(name);});
+        divContainer = $("<div class='namePointContainer'></div>")
+        divContainer.append("<a>" + name + ": </a> ");
+        divContainer.append(newInput);
+
+        $("#Points").append(divContainer);
+      });
+      
+    }
+  };
+
+$("#showQuestion").hide();
+$("#inputField").hide();
+var currentMousePos = { x: -1, y: -1 };
+$(document).mousemove(function(event) {
+    currentMousePos.x = event.pageX;
+    currentMousePos.y = event.pageY;
+});
+
+function ResetBuzzer() {
+  $("#BuzzerText").html("");
+  $("#Buzzer").hide();
+  namesBuzzed = [];
+}
+
+function updatePoints(name) {
+    exampleSocket.send(JSON.stringify({"MessageType": "UpdatePoints", name:name, points: $("#points" + name.replace(/ /g, "_")).val(), code: queryString}));
+}
+
+function getAllData() {
+  console.log("Get Game");
+  $.ajax({
+    type: "GET",
+    url: "/getGame/" + queryString,
+    contentType: "application/json; charset=utf-8",
+    dataType: "json",
+    success: function(data) {
+      console.log(data);
+      categories = data.categories;
+      pointCategories = data.pointCategories;
+      categoryNames = data.categoryNames;
+      rebuildTable();
+    }
+  });
+}
+
+
+
+
+function updateCategory(index, text) {
+    categoryNames[index] = text.value;
+}
+
+function CloseReveal() {
+  
+  document.getElementById("audioPlayQuestion").pause();
+  
+  exampleSocket.send(JSON.stringify({"MessageType": "CloseQuestion", code: queryString}));
+  rebuildTable();
+  $("#showQuestion").hide(); 
+}
+
+function sendOpenQuestion(x,y) {
+  exampleSocket.send(JSON.stringify({"MessageType": "OpenQuestion", x:x, y:y, code: queryString})); 
+  $("#showQuestion").show();
+      $("#showQuestion").find("#Question").html("Frage: " + categories[x][y][0] + "\nAntwort: " + categories[x][y][1]);
+      if(categories[x][y][3]!=null)
+        $("#showQuestion").find("#QuestionPicture").attr("src",categories[x][y][3]);
+      else
+        $("#showQuestion").find("#QuestionPicture").attr("src","");
+      if(categories[x][y][5]!=null)
+        $("#showQuestion").find("#AnswerPicture").attr("src",categories[x][y][5]);
+      else
+        $("#showQuestion").find("#AnswerPicture").attr("src","");
+      if(categories[x][y][4]!=null) {
+        
+        document.getElementById("audioQuestion").src=categories[x][y][4];
+        
+        document.getElementById("audioPlayQuestion").load();
+        document.getElementById("audioPlayQuestion").play();
+      }
+      else
+        $("#showQuestion").find("#audioQuestion").attr("src","");
+        
+      
+      $("#showQuestion").find("#RevealRight").on("click", function(){revealAnswer(x,y, true);});
+      $("#showQuestion").find("#RevealWrong").on("click", function(){revealAnswer(x,y, false);});
+      $("#NamePointSetter").html("");
+      $("#guessArea").html("");
+      names.forEach(name => {
+        di = $("<div class='guessBG'>");
+      namePointSetter = $("<a class='miniText'>" + name + "</a>")
+      buttonPlus = $("<button class='miniButton'>+</button>");
+      buttonMinus = $("<button class='miniButton'>-</button>");
+      buttonPlus.on("click", function() {$("#points" + name.replace(/ /g, "_")).val(parseInt($("#points" + name.replace(/ /g, "_")).val(),10) + pointCategories[x]); updatePoints(name);});
+      buttonMinus.on("click", function() {$("#points" + name.replace(/ /g, "_")).val(parseInt($("#points" + name.replace(/ /g, "_")).val(),10) - pointCategories[x]); updatePoints(name);});
+      di.append(namePointSetter);
+      di.append(buttonPlus);
+      di.append(buttonMinus);
+      $("#NamePointSetter").append(di);
+      });
+      $("#mapC").hide();
+      if(categories[x][y][7] == "Location"){
+        currentLocation = new mapboxgl.LngLat(categories[x][y][8].long,categories[x][y][8].lat);
+        $("#mapC").show();
+        new mapboxgl.Marker(MapEl)
+        .setLngLat(new mapboxgl.LngLat(categories[x][y][8].long,categories[x][y][8].lat))
+        .addTo(map);
+      }
+      if(categories[x][y][7] == "schatzfrage"){
+        guessDiv = $("#guessArea");
+        guessDiv.html("");
+          names.forEach(name => {
+            
+            var di2 = $("<div class='guessBG'>");
+
+            namePointSetter = $("<a>" + name + ": </a><a> </a>")
+            buttonPlus = $("<a class='guess'>Guess: </a><a class='guess' id='guess" + name.replace(/ /g, "_") + "'>-</a><a> </a>");
+            buttonMinus = $("<a style={color:red}>Diff: </a><a id='diff" + name.replace(/ /g, "_") + "'>-</a><a> </a>");
+            di2.append(namePointSetter);
+            di2.append(buttonPlus);
+            di2.append(buttonMinus);
+            guessDiv.append(di2);
+          });
+    }
+    if(categories[x][y][7] == "Location"){
+        guessDiv = $("#guessArea");
+        guessDiv.html("");
+          names.forEach(name => {
+            
+            di = $("<div class='guessBG'>");
+
+            namePointSetter = $("<a>" + name + ": </a><a> </a>")
+            distanceButton = $("<a class='guess'>Distance: </a><a class='guess' id='distance" + name.replace(/ /g, "_") + "'>-</a><a> </a>");
+            di.append(namePointSetter);
+            di.append(distanceButton);
+            guessDiv.append(di);
+          });
+    }
+    currentX = x;
+    currentY = y;
+}
+
+function revealAnswer(x,y, right) {
+  categories[x][y][2] = true;
+  
+  exampleSocket.send(JSON.stringify({"MessageType": "RevealAnswer", right, x:x, y:y, code: queryString}));
+  
+  document.getElementById("audioPlayQuestion").pause();
+}
+
+function rebuildTable() {
+
+  var container = $('.table'),
+  tableNew = $('<table class="pointField">');
+  container.empty();
+  var pointCol = 0;
+  var th = $('<tr>');
+    th.append('<th>Punkte</th>');
+  tableNew.append(th)
+  pointCategories.forEach(function(text) {
+    var td = $('<tr>');
+      var inpu = $('<td>' + text + '</td>');
+      inpu.css({margin: 0,
+  top: "50%",
+  transform: "translateY(-0%)"});
+    td.append(inpu);
+    
+    tableNew.append(td);
+  });
+  //tableNew.append(trNew);
+
+  container.append(tableNew);
+
+  var table = $('<table class="GameField"><tbody class="tbodyGameField">');
+
+
+  tr = $('<tr>');
+  catCount = 0;
+categoryNames.forEach(function(category) {
+    tr.append('<th class="HeaderDiv">' + category + '</th>');
+    catCount += 1;
+});
+  table.append(tr);
+
+
+
+var row = 0, column = 0;
+var doneCount = 0;
+var completeCount = 0;
+categories.forEach(function(category) {
+    column = 0;
+  var tr = $('<tr>');
+  
+    category.forEach(function(text) {
+      console.log(text[2]);
+    var div = $('<div class="tableCell' + (text[2] ? "Deactivated" : '') + '" x = ' + column + ' y= ' + row +' title="Test">');
+    div.tooltip({
+      content: text[0]
+    });
+    var tableText = $("<div class='tableText'>" + text[0] + "</div>");
+    tableText.tooltip({
+      content: text[0],
+      classes: {
+        "ui-tooltip": "myTooltip"
+      }
+    });
+    div.append(tableText);
+    
+    var td = $('<td onclick="sendOpenQuestion(' + row + ', ' + column+')">');
+    td.append(div);
+    tr.append(td);
+    column += 1;
+
+      if(text[2])
+        doneCount+=1;
+      completeCount+=1;
+
+  });
+  table.append(tr);
+  row+=1;
+});
+
+percentageDone = doneCount / completeCount;
+
+container.append(table);
+$('.percentage').empty();
+$('#body').append("<p class='percentage'>" + (percentageDone * 100).toFixed(0) + "% done.</p>");
+}
+
+</script>
+
+</body>
+</html>
