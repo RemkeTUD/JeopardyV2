@@ -3,6 +3,8 @@ var express = require("express");
 const enableWs = require('express-ws')
 var cors = require('cors');
 var app = express();
+
+var timesyncServer = require('timesync/server');
 enableWs(app);
 app.use(express.static(__dirname));
 var path = require('path');
@@ -17,6 +19,8 @@ app.use(bodyParser.urlencoded({
     limit: '50mb',
     extended: true
 }));
+
+app.use('/timesync', timesyncServer.requestHandler);
 app.use(bodyParser.json());
 
 app.use(function(req, res, next) {

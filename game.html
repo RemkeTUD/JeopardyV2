@@ -9,6 +9,10 @@
   <meta name="author" content="">
   <link rel="stylesheet" href="css/style.css">
   <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.0.5/es5-shim.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.23.0/es6-shim.min.js"></script>
+
+  <script src="/timesync/timesync.js"></script>
   <script
 			  src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
 			  integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30="
@@ -71,6 +75,16 @@
 <img id = "wrong" class="RevealResult" src="/wrong.png"></img>
 
 <script>
+
+var ts = timesync.create({
+    server: '/timesync',
+    interval: 10000
+  });
+
+  setInterval(function () {
+    var now = new Date(ts.now());
+    console.log('now: ' + now.getSeconds() + ' s');
+  }, 10000);
 
 mapboxgl.accessToken = 'pk.eyJ1IjoicmVta2V0dWQiLCJhIjoiY2s1YXR5cDdtMWFkbjNlcXg1eHJiOW52MCJ9.V3UJWV-eH3FwK3PN4bYoPA';
 var map = new mapboxgl.Map({
